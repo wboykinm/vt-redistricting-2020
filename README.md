@@ -72,7 +72,7 @@ psql vt_districts_2020 -c "\\copy (
 psql vt_districts_2020 -c "\\copy (
   SELECT
     block10.geoid AS block_id,
-    btv_wards_2018.ogc_fid AS assignment
+    btv_wards_2018.ward_assig AS assignment
   FROM btv_wards_2018
   JOIN block10 ON ST_Intersects(ST_Centroid(block10.shape), btv_wards_2018.wkb_geometry)
     AND ST_Area(ST_Intersection(block10.shape, btv_wards_2018.wkb_geometry)) > (ST_Area(block10.shape) / 2)
@@ -103,7 +103,7 @@ psql vt_districts_2020 -c "\\copy (
 psql vt_districts_2020 -c "\\copy (
   SELECT
     block20.geoid AS block_id,
-    btv_wards_2018.ogc_fid AS assignment
+    btv_wards_2018.ward_assig AS assignment
   FROM btv_wards_2018
   JOIN block20 ON ST_Intersects(ST_Centroid(block20.shape), btv_wards_2018.wkb_geometry)
     AND ST_Area(ST_Intersection(block20.shape, btv_wards_2018.wkb_geometry)) > (ST_Area(block20.shape) / 2)
