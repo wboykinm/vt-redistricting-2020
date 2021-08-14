@@ -89,6 +89,25 @@ psql vt_districts_2020 -c "\\copy (
   FROM vt_senate_2020
   JOIN block20 ON ST_Intersects(ST_Centroid(block20.shape), vt_senate_2020.wkb_geometry)
 ) TO STDOUT CSV HEADER" > correspondence/vt_senate_2020.csv
+
+# House
+psql vt_districts_2020 -c "\\copy (
+  SELECT
+    block20.geoid AS block_id,
+    vt_house_2020.ogc_fid AS assignment
+  FROM vt_house_2020
+  JOIN block20 ON ST_Intersects(ST_Centroid(block20.shape), vt_house_2020.wkb_geometry)
+) TO STDOUT CSV HEADER" > correspondence/vt_house_2020.csv
+
+# City
+psql vt_districts_2020 -c "\\copy (
+  SELECT
+    block20.geoid AS block_id,
+    btv_wards_2018.ogc_fid AS assignment
+  FROM btv_wards_2018
+  JOIN block20 ON ST_Intersects(ST_Centroid(block20.shape), btv_wards_2018.wkb_geometry)
+    AND ST_Area(ST_Intersection(block20.shape, btv_wards_2018.wkb_geometry)) > (ST_Area(block20.shape) / 2)
+) TO STDOUT CSV HEADER" > correspondence/btv_wards_2020.csv
 ```
 
 ### Play around!
