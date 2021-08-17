@@ -114,3 +114,22 @@ psql vt_districts_2020 -c "\\copy (
 Once uploaded to one of the online tools, [the resulting plans can be shared and evaluated](https://app.districtbuilder.org/projects/4eda3498-b405-44d5-8e37-c37c36563ddc).
 
 ![editing](img/editing.png)
+
+## Block statistics
+The census has provided block-level statistics in `.pl` file format, including population counts and certain demographic metrics. For ease of use, we can access [pre-transformed](https://redistrictingdatahub.org/wp-content/uploads/2021/08/readme_vt_pl2020_b_csv.txt) data in CSV format from [the Redistricting Data Hub](https://redistrictingdatahub.org/dataset/vermont-block-pl-94171-2020/). These are an important component of overall analyses, so we'll add them to the spatial database above.
+
+### Acquire data
+```sh
+wget -c https://redistrictingdatahub.org/download/?datasetid=25770&document=%2Fweb_ready_stage%2FPL2020%2Fcsv%2Fvt_pl2020_b.zip
+xsv stats data/vt_pl2020_b.csv | xsv select 1-2 | tail -n +2 > data/vt_pl2020_b.sql
+# Manually edit the above to a CREATE TABLE statement
+```
+
+### Ingest to database
+```sh
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_94171_2020"
+psql vt_districts_2020 -f data/vt_pl2020_b.sql
+psql vt_districts_2020 -c "\COPY vt_94171_2020 FROM 'data/vt_pl2020_b.csv' CSV HEADER"
+```
+
+### Join to Block boundaries
