@@ -133,3 +133,26 @@ psql vt_districts_2020 -c "\COPY vt_94171_2020 FROM 'data/vt_pl2020_b.csv' CSV H
 ```
 
 ### Join to Block boundaries
+```sh
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_block_stats_2020"
+psql vt_districts_2020 -c "CREATE TABLE vt_block_stats_2020 AS (
+  SELECT
+    g.geoid,
+    s.p0010001 AS total_population,
+    s.P0010003 AS white,
+    s.P0010004 AS black,
+    s.P0010005 AS amerindian_alaska_native,
+    s.P0010006 AS asian,
+    s.P0010007 AS hawaiian_pacific_islander,
+    s.P0010008 AS other,
+    s.P0010009 AS multiracial,
+    s.P0020002 AS hispanic_latino,
+    s.P0030001 AS population_over_18,
+    s.H0010001 AS housing_units,
+    s.H0010002 AS occupied_units,
+    s.H0010003 AS vacant_units,
+    g.shape AS the_geom
+  FROM block20 g
+  JOIN vt_94171_2020 s ON s.geocode = g.geoid
+)"
+```
