@@ -119,6 +119,19 @@ Once uploaded to one of the online tools, [the resulting plans can be shared and
 The census has provided block-level statistics in `.pl` file format, including population counts and certain demographic metrics. For ease of use, we can access [pre-transformed](https://redistrictingdatahub.org/wp-content/uploads/2021/08/readme_vt_pl2020_b_csv.txt) data in CSV format from [the Redistricting Data Hub](https://redistrictingdatahub.org/dataset/vermont-block-pl-94171-2020/). These are an important component of overall analyses, so we'll add them to the spatial database above.
 
 ### Acquire data
+
+#### 2010
+One table at a time download from [the census archives](https://data.census.gov/cedsci/table?q=p3&g=0400000US50.100000&tid=DECENNIALPL2010.P3), then some selection and joining:
+
+```
+xsv select "GEO_ID,P001001,P001003,P001004,P001005,P001006,P001007,P001008,P001009" data/DECENNIALPL2010.P1_data_with_overlays_2021-08-17T194626.csv > data/decennial_2010_vt_p1.csv
+xsv select "GEO_ID,P002002" data/DECENNIALPL2010.P2_data_with_overlays_2021-08-17T205625.csv > data/decennial_2010_vt_p2.csv
+xsv select "GEO_ID,P003001" data/DECENNIALPL2010.P3_data_with_overlays_2021-08-17T205705.csv > data/decennial_2010_vt_p3.csv
+xsv select "GEO_ID,H003001,H003002,H003003" data/DECENNIALSF12010.H3_data_with_overlays_2021-08-17T205300.csv > data/decennial_2010_vt_h3.csv
+csvjoin -c GEO_ID data/decennial_2010_vt_p1.csv data/decennial_2010_vt_p2.csv data/decennial_2010_vt_p3.csv data/decennial_2010_vt_h3.csv > data/vt_pl2010_b.csv
+```
+
+#### 2020
 ```sh
 wget -c https://redistrictingdatahub.org/download/?datasetid=25770&document=%2Fweb_ready_stage%2FPL2020%2Fcsv%2Fvt_pl2020_b.zip
 xsv stats data/vt_pl2020_b.csv | xsv select 1-2 | tail -n +2 > data/vt_pl2020_b.sql
@@ -126,6 +139,30 @@ xsv stats data/vt_pl2020_b.csv | xsv select 1-2 | tail -n +2 > data/vt_pl2020_b.
 ```
 
 ### Ingest to database
+
+#### 2010
+```sh
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_94171_2010"
+psql vt_districts_2020 -c "CREATE TABLE vt_94171_2010 (
+  geo_id text,
+  p001001 int,
+  p001003 int,
+  p001004 int,
+  p001005 int,
+  p001006 int,
+  p001007 int,
+  p001008 int,
+  p001009 int,
+  p002002 int,
+  p003001 int,
+  h003001 int,
+  h003002 int,
+  h003003 int
+)"
+psql vt_districts_2020 -c "\COPY vt_94171_2010 FROM 'data/vt_pl2010_b.csv' CSV HEADER"
+```
+
+#### 2020
 ```sh
 psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_94171_2020"
 psql vt_districts_2020 -f data/vt_pl2020_b.sql
@@ -133,6 +170,31 @@ psql vt_districts_2020 -c "\COPY vt_94171_2020 FROM 'data/vt_pl2020_b.csv' CSV H
 ```
 
 ### Join to Block boundaries
+```sh
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_block_stats_2010"
+psql vt_districts_2020 -c "CREATE TABLE vt_block_stats_2010 AS (
+  SELECT
+    g.geoid,
+    s.p001001 AS total_population,
+    s.p001003 AS white,
+    s.p001004 AS black,
+    s.p001005 AS amerindian_alaska_native,
+    s.p001006 AS asian,
+    s.p001007 AS hawaiian_pacific_islander,
+    s.p001008 AS other,
+    s.p001009 AS multiracial,
+    s.p002002 AS hispanic_latino,
+    s.p003001 AS population_over_18,
+    s.h003001 AS housing_units,
+    s.h003002 AS occupied_units,
+    s.h003003 AS vacant_units,
+    g.shape AS the_geom
+  FROM block10 g
+  JOIN vt_94171_2010 s ON replace(s.geo_id,'1000000US','') = g.geoid
+)"
+```
+
+#### 2020
 ```sh
 psql vt_districts_2020 -c "DROP TABLE IF EXISTS vt_block_stats_2020"
 psql vt_districts_2020 -c "CREATE TABLE vt_block_stats_2020 AS (
@@ -156,3 +218,29 @@ psql vt_districts_2020 -c "CREATE TABLE vt_block_stats_2020 AS (
   JOIN vt_94171_2020 s ON s.geocode = g.geoid
 )"
 ```
+
+### Burlington blocks by ward
+
+#### 2010
+```
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_stats_2010"
+psql vt_districts_2020 -c "CREATE TABLE btv_stats_2010 AS (
+  SELECT
+    v.*,
+    w.ward_assig
+  FROM vt_block_stats_2010 v
+  JOIN btv_wards_2018 w ON ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry)
+  AND ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
+)"
+```
+
+#### 2020
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_stats_2020"
+psql vt_districts_2020 -c "CREATE TABLE btv_stats_2020 AS (
+  SELECT
+    v.*,
+    w.ward_assig
+  FROM vt_block_stats_2020 v
+  JOIN btv_wards_2018 w ON ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry)
+  AND ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
+)"
