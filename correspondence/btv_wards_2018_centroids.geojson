@@ -1,0 +1,14 @@
+{
+"type": "FeatureCollection",
+"name": "btv_wards_2018_centroids",
+"features": [
+{ "type": "Feature", "properties": { "ward_assig": 1 }, "geometry": { "type": "Point", "coordinates": [ -73.19378527420254, 44.482336790661151 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 2 }, "geometry": { "type": "Point", "coordinates": [ -73.212478246866326, 44.495179806645858 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 3 }, "geometry": { "type": "Point", "coordinates": [ -73.218754154471242, 44.482801352679211 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 4 }, "geometry": { "type": "Point", "coordinates": [ -73.253142904264692, 44.504679366246059 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 5 }, "geometry": { "type": "Point", "coordinates": [ -73.217582430480348, 44.457388153463988 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 7 }, "geometry": { "type": "Point", "coordinates": [ -73.242890932247235, 44.513892114905772 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 8 }, "geometry": { "type": "Point", "coordinates": [ -73.195599592604964, 44.473555615651549 ] } },
+{ "type": "Feature", "properties": { "ward_assig": 6 }, "geometry": { "type": "Point", "coordinates": [ -73.201638478286299, 44.464997483423502 ] } }
+]
+}

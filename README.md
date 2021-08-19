@@ -229,18 +229,94 @@ psql vt_districts_2020 -c "CREATE TABLE btv_stats_2010 AS (
     v.*,
     w.ward_assig
   FROM vt_block_stats_2010 v
-  JOIN btv_wards_2018 w ON ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry)
-  AND ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
+  JOIN btv_wards_2018 w ON
+  -- ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry) AND
+  ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
 )"
 ```
 
 #### 2020
+```
 psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_stats_2020"
 psql vt_districts_2020 -c "CREATE TABLE btv_stats_2020 AS (
   SELECT
     v.*,
     w.ward_assig
   FROM vt_block_stats_2020 v
-  JOIN btv_wards_2018 w ON ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry)
-  AND ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
+  JOIN btv_wards_2018 w ON
+  -- ST_Intersects(ST_Centroid(v.the_geom), w.wkb_geometry) AND
+  ST_Area(ST_Intersection(v.the_geom, w.wkb_geometry)) > (ST_Area(v.the_geom) / 2)
 )"
+```
+
+### Centroids for labeling
+
+#### 2010
+```
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_stats_2010_centroids"
+psql vt_districts_2020 -c "CREATE TABLE btv_stats_2010_centroids AS (
+  SELECT
+    geoid,
+    total_population,
+    white,
+    black,
+    amerindian_alaska_native,
+    asian,
+    hawaiian_pacific_islander,
+    other,
+    multiracial,
+    hispanic_latino,
+    population_over_18,
+    housing_units,
+    occupied_units,
+    vacant_units,
+    ward_assig,
+    (CASE
+      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN the_geom
+      ELSE ST_PointOnSurface(the_geom)
+    END) AS the_geom
+  FROM btv_stats_2010
+)"
+```
+
+#### 2020
+```
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_stats_2020_centroids"
+psql vt_districts_2020 -c "CREATE TABLE btv_stats_2020_centroids AS (
+  SELECT
+    geoid,
+    total_population,
+    white,
+    black,
+    amerindian_alaska_native,
+    asian,
+    hawaiian_pacific_islander,
+    other,
+    multiracial,
+    hispanic_latino,
+    population_over_18,
+    housing_units,
+    occupied_units,
+    vacant_units,
+    ward_assig,
+    (CASE
+      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN the_geom
+      ELSE ST_PointOnSurface(the_geom)
+    END) AS the_geom
+  FROM btv_stats_2020
+)"
+```
+
+#### Wards
+```
+psql vt_districts_2020 -c "DROP TABLE IF EXISTS btv_wards_2018_centroids"
+psql vt_districts_2020 -c "CREATE TABLE btv_wards_2018_centroids AS (
+  SELECT
+    ward_assig,
+    (CASE
+      WHEN ST_Intersects(ST_Centroid(wkb_geometry),wkb_geometry) THEN wkb_geometry
+      ELSE ST_PointOnSurface(wkb_geometry)
+    END) AS the_geom
+  FROM btv_wards_2018
+)"
+```
