@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Burlington Census Blocks 2010-2020</title>
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.0/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.0/mapbox-gl.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
+  <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet" />
   <style>
     body {
       margin: 0;
@@ -19,85 +19,245 @@
       bottom: 0;
       width: 100%;
     }
-  </style>
 
+    .blockInfo {
+      position: absolute;
+      font-family: sans-serif;
+      margin-top: 5px;
+      margin-left: 5px;
+      padding: 5px;
+      width: 30%;
+      border: 2px solid black;
+      font-size: 14px;
+      color: #222;
+      background-color: #fff;
+      border-radius: 3px;
+    }
+  </style>
 </head>
 
 <body>
-  <style>
-    #sidebar {
-      position: absolute;
-      top: 5%;
-      right: 0;
-      bottom:40%;
-      width: 30%;
-      overflow: auto;
-      background: rgba(255, 255, 255, 0.8);
-    }
-
-    #map canvas {
-      cursor: crosshair;
-    }
-    #features {
-      padding: 20px;
-    }
-    h1 {
-      padding: 10px;
-    }
-  </style>
   <div id="map"></div>
-  <pre id="sidebar">
-    <h1>Burlington, VT</h1><hr>
-    <div id="features"></div>
-  </pre>
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+  <div class="blockInfo">
+    <h2>2010</h2>
+    <div><strong>Block:</strong>&nbsp;<span id="block10"></span></div>
+    <div><strong>Population:</strong>&nbsp;<span id="pop10"></span></div>
+    <h2>2020</h2>
+    <div><strong>Block:</strong>&nbsp;<span id="block20"></span></div>
+    <div><strong>Population:</strong>&nbsp;<span id="pop20"></span></div>
+  </div>
+
   <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94c2F0ZWxsaXRlIiwiYSI6ImNqZWZ0MHg0djFqZWoyeG9kN3ZiMmkyd3cifQ.y2HNjGo7FcKQ7psI_BfGqQ';
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/landplanner/cksho29f14w4t18m7fm10q0f1',
-      zoom: 12,
-      center: [-73.213663, 44.487650],
+    mapboxgl.accessToken = 'pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w';
+    var map = new mapboxgl.Map({
+      container: 'map', // Specify the container ID
+      style: 'mapbox://styles/landplanner/cksrk9qc729un17mrsd9tvpsi', //'mapbox://styles/landplanner/cksho29f14w4t18m7fm10q0f1', // Specify which map style to use
+      center: [-73.213663, 44.487650], // Specify the starting position [lng, lat]
+      zoom: 12, // Specify the starting zoom
       hash: true
     });
 
-    var nav = new mapboxgl.NavigationControl();
-    map.addControl(nav, 'top-left');
+    // Target the span elements used in the sidebar
+    var blockDisplay10 = document.getElementById('block10');
+    var popDisplay10 = document.getElementById('pop10');
+    var blockDisplay20 = document.getElementById('block20');
+    var popDisplay20 = document.getElementById('pop20');
 
-    map.addControl(
-      new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl
+    map.on('load', function() {
+
+      map.addSource('btv_block_stats_2010a', {
+        type: 'geojson',
+        data: 'https://gist.githubusercontent.com/wboykinm/b10ca2a25e2bc48efd12ab0de51ba389/raw/585c49f296fc4a283839b926aa253281bc714f86/btv_block_stats_2010.geojson'
       })
-    );
-    map.on('mousemove', (e) => {
-      const features = map.queryRenderedFeatures(e.point);
-
-      // Limit the number of properties we're displaying for
-      // legibility and performance
-      const displayProperties = [
-        'sourceLayer',
-        'properties'
-      ];
-
-      const displayFeatures = features.map((feat) => {
-        const displayFeat = {};
-        displayProperties.forEach((prop) => {
-          displayFeat[prop] = feat[prop];
-        });
-        return displayFeat;
+      /*
+      map.addSource('btv_block_stats_2010', {
+        type: 'vector',
+        url: 'mapbox://landplanner.ckshnxof023a520qpbmojmf51-634xa'
+      });
+      */
+      /*
+            map.addSource('btv_block_stats_2020', {
+              type: 'vector',
+              url: 'mapbox://landplanner.ckshny6re44vm22lwmpu2lbpp-17159'
+            });
+      */
+      // Add blocks-2010 as a layer and style it
+      map.addLayer({
+          'id': 'blocks-2010',
+          'type': 'fill',
+          'source': 'btv_block_stats_2010a',
+          'layout': {},
+          //'source-layer': 'btv_block_stats_2010',
+          'paint': {
+            'fill-color': '#627BC1',
+            'fill-opacity': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              1,
+              0.5
+            ]
+          }
+        } //,
+        //'btv-wards-2018-centroids'
+      );
+      var blockID10 = null;
+      /*
+            map.addLayer(
+              {
+                'id': 'blocks-2020',
+                'type': 'fill',
+                'source': 'btv_block_stats_2020',
+                'source-layer': 'btv_block_stats_2020',
+                'paint': {
+                  'fill-color': '#fff',
+                  'fill-outline-color': '#333',
+                  'fill-opacity': [
+                    'case',
+                    ['boolean', ['feature-state', 'hover'], false],
+                    1,
+                    0
+                  ]
+                }
+              },
+              'btv-wards-2018-centroids'
+            );
+            var blockID20 = null;
+      */
+      // 2010 layer behavior
+      map.on('mousemove', 'blocks-2010', (e) => {
+        if (e.features.length > 0) {
+          if (blockID10 !== null) {
+            map.setFeatureState({
+              source: 'btv_block_stats_2010a',
+              id: blockID10
+            }, {
+              hover: false
+            });
+          }
+          blockID10 = e.features[0].properties.geoid;
+          map.setFeatureState({
+            source: 'btv_block_stats_2010a',
+            id: blockID10
+          }, {
+            hover: true
+          });
+        }
       });
 
-      // Write object as string with an indent of two spaces.
-      const pop_2010 = displayFeatures.find(x => x.sourceLayer === 'btv_block_stats_2010').properties;
-      const pop_2020 = displayFeatures.find(x => x.sourceLayer === 'btv_block_stats_2020').properties;
+      map.on('mouseleave', 'blocks-2010', () => {
+        if (blockID10 !== null) {
+          map.setFeatureState({
+            source: 'btv_block_stats_2010a',
+            id: blockID10
+          }, {
+            hover: false
+          });
+        }
+        blockID10 = null;
+      });
+/*
+      map.on('mousemove', 'blocks-2010', (e) => {
+        var blockBlock10 = e.features[0].properties.geoid;
+        var blockPop10 = e.features[0].properties.total_population;
 
-      document.getElementById('features').innerHTML = '<h2>2010</h2><p>Block ' + pop_2010.geoid + '</p><p>Population = <b>' + pop_2010.total_population + '</b></p><br><h2>2020</h2><p>Block ' + pop_2020.geoid + '</p><p>Population = <b>' + pop_2020.total_population + '</b></p>';
+        if (e.features.length > 0) {
+          blockDisplay10.textContent = blockBlock10;
+          popDisplay10.textContent = blockPop10;
 
+          // When the mouse moves over the btv_block_stats_2010 layer, update the
+          // feature state for the feature under the mouse
+          if (blockID10) {
+            map.setFeatureState({
+              source: 'btv_block_stats_2010',
+              //sourceLayer: 'btv_block_stats_2010',
+              id: blockID10
+            }, {
+              hover: false
+            });
+          }
+
+          blockID10 = e.features[0].properties.geoid;
+
+          map.setFeatureState({
+            source: 'btv_block_stats_2010',
+            //sourceLayer: 'btv_block_stats_2010',
+            id: blockID10
+          }, {
+            hover: true
+          });
+        }
+      });
+
+      // When the mouse leaves the blocks-2010 layer, update the
+      // feature state of the previously hovered feature
+      map.on('mouseleave', 'blocks-2010', function() {
+        if (blockID10) {
+          map.setFeatureState({
+            source: 'btv_block_stats_2010',
+            //sourceLayer: 'btv_block_stats_2010',
+            id: blockID10
+          }, {
+            hover: false
+          });
+        }
+        blockID10 = null;
+        // Remove the information from the previously hovered feature from the sidebar
+        blockDisplay10.textContent = '';
+        popDisplay10.textContent = '';
+      });
+      */
+      /*
+            // 2020 layer behavior
+            map.on('mousemove', 'blocks-2020', (e) => {
+              var blockBlock20 = e.features[0].properties.geoid;
+              var blockPop20 = e.features[0].properties.total_population;
+
+              if (e.features.length > 0) {
+                blockDisplay20.textContent = blockBlock20;
+                popDisplay20.textContent = blockPop20;
+
+                // When the mouse moves over the btv_block_stats_2020 layer, update the
+                // feature state for the feature under the mouse
+                if (blockID20) {
+                  map.removeFeatureState({
+                    source: 'btv_block_stats_2020',
+                    sourceLayer: 'btv_block_stats_2020',
+                    id: blockID20
+                  });
+                }
+
+                blockID20 = e.features[0].properties.geoid;
+
+                map.setFeatureState({
+                  source: 'btv_block_stats_2020',
+                  sourceLayer: 'btv_block_stats_2020',
+                  id: blockID10
+                }, {
+                  hover: true
+                });
+              }
+            });
+
+            // When the mouse leaves the blocks-2020 layer, update the
+            // feature state of the previously hovered feature
+            map.on('mouseleave', 'blocks-2020', function() {
+              if (blockID20) {
+                map.setFeatureState({
+                  source: 'btv_block_stats_2020',
+                  sourceLayer: 'btv_block_stats_2020',
+                  id: blockID20
+                }, {
+                  hover: false
+                });
+              }
+              blockID20 = null;
+              // Remove the information from the previously hovered feature from the sidebar
+              blockDisplay20.textContent = '';
+              popDisplay20.textContent = '';
+            });
+            */
     });
   </script>
-
 </body>
 
 </html>

@@ -272,7 +272,7 @@ psql vt_districts_2020 -c "CREATE TABLE btv_stats_2010_centroids AS (
     vacant_units,
     ward_assig,
     (CASE
-      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN the_geom
+      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN ST_Centroid(the_geom)
       ELSE ST_PointOnSurface(the_geom)
     END) AS the_geom
   FROM btv_stats_2010
@@ -300,7 +300,7 @@ psql vt_districts_2020 -c "CREATE TABLE btv_stats_2020_centroids AS (
     vacant_units,
     ward_assig,
     (CASE
-      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN the_geom
+      WHEN ST_Intersects(ST_Centroid(the_geom),the_geom) THEN ST_Centroid(the_geom)
       ELSE ST_PointOnSurface(the_geom)
     END) AS the_geom
   FROM btv_stats_2020
@@ -314,7 +314,7 @@ psql vt_districts_2020 -c "CREATE TABLE btv_wards_2018_centroids AS (
   SELECT
     ward_assig,
     (CASE
-      WHEN ST_Intersects(ST_Centroid(wkb_geometry),wkb_geometry) THEN wkb_geometry
+      WHEN ST_Intersects(ST_Centroid(wkb_geometry),wkb_geometry) THEN ST_Centroid(wkb_geometry)
       ELSE ST_PointOnSurface(wkb_geometry)
     END) AS the_geom
   FROM btv_wards_2018
